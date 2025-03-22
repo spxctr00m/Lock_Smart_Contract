@@ -7,6 +7,7 @@ let provider;
 let signer;
 let contract;
 let balanceUpdateCallback = null;
+let userDepositUpdateCallback = null;
 
 // Function to initialize the provider, signer, and contract
 const initialize = async () => {
@@ -16,8 +17,25 @@ const initialize = async () => {
     contract = new Contract(CONTRACT_ADDRESS, Lock_ABI, signer);
 
      // 🔹 Listen for Deposit & Withdrawal events
-     contract.on("Deposit", () => updateBalance());
-     contract.on("Withdrawal", () => updateBalance());
+     contract.on("Deposit", async (user, amount, when) => {
+      console.log(`Deposit event detected: ${user} deposited ${formatEther(amount)} ETH at ${new Date(when * 1000)}`); 
+      updateBalance(); 
+      updateUserDeposit()
+      // const currentUser = await signer.getAddress()
+      // if (user.toLowerCase() === currentUser.toLowerCase()) {
+      //   updateUserDeposit();
+      // }
+     });
+
+     contract.on("Withdrawal", async (user, amount, when) => {
+      console.log(`Withdrawal event: ${user} withdrew ${formatEther(amount)} ETH at ${new Date(when * 1000)}`);
+
+      updateBalance(); // Update contract balance
+      const currentUser = await signer.getAddress();
+      if (user.toLowerCase() === currentUser.toLowerCase()) {
+        updateUserDeposit(); // Update UI if it's the current user
+      }
+    });
  
   } else {
     console.error("Please install MetaMask!");
@@ -58,6 +76,36 @@ const updateBalance = async () => {
 export const setBalanceUpdateCallback = (callback) => {
   balanceUpdateCallback = callback;
 };
+
+  // Function to get user deposit info
+export const getUserDeposit = async (account) => {
+  if (!contract) await initialize();
+  try {
+    const depositInfo = await contract.deposits(account);
+    return {
+        amount: formatEther(depositInfo.amount),
+        unlockTime: new Date(Number(depositInfo.unlockTime) * 1000).toLocaleString()
+    };
+} catch (error) {
+    console.error("Error fetching deposit info:", error);
+    return { amount: "0", unlockTime: "N/A" }; // Return default values on error
+}
+};
+
+
+const updateUserDeposit = async () => {
+  if (userDepositUpdateCallback && signer) {
+    const currentUser = await signer.getAddress(); // ✅ Ensure the correct user address is fetched
+    const depositInfo = await getUserDeposit(currentUser);
+    userDepositUpdateCallback(depositInfo);
+  }
+};
+
+// Function to set user deposit update callback (for React UI)
+export const setUserDepositUpdateCallback = (callback) => {
+  userDepositUpdateCallback = callback;
+};
+
 
   // Function to deposit funds to the contract
 export const depositFund = async (depositValue) => {
