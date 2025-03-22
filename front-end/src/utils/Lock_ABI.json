@@ -1,22 +1,11 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_unlockTime",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "constructor"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
         "indexed": true,
         "internalType": "address",
-        "name": "from",
+        "name": "user",
         "type": "address"
       },
       {
@@ -38,6 +27,12 @@
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
       {
         "indexed": false,
         "internalType": "uint256",
@@ -62,25 +57,23 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "address payable",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "unlockTime",
+    "name": "deposits",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "unlockTime",
         "type": "uint256"
       }
     ],
