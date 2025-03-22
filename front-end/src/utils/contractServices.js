@@ -62,6 +62,7 @@ export const setBalanceUpdateCallback = (callback) => {
   // Function to deposit funds to the contract
 export const depositFund = async (depositValue) => {
     if (!contract) await initialize();
+    await requestAccount();
     const ethValue = parseEther(depositValue);
     const deposit = await contract.deposit({ value: ethValue });
     await deposit.wait();

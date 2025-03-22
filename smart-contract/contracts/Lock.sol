@@ -1,43 +1,39 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
-
 contract Lock {
-    uint public unlockTime;
-    address payable public owner;
-
-    event Withdrawal(uint amount, uint when);
-    event Deposit(address indexed from, uint amount, uint when);
-
-    constructor(uint _unlockTime) payable {
-        require(
-            block.timestamp < _unlockTime,
-            "Unlock time should be in the future"
-        );
-
-        unlockTime = _unlockTime;
-        owner = payable(msg.sender);
+    struct DepositInfo {
+        uint amount;
+        uint unlockTime;
     }
 
-    function withdraw() public {
-        // Uncomment this line, and the import of "hardhat/console.sol", to print a log in your terminal
-        // console.log("Unlock time is %o and block timestamp is %o", unlockTime, block.timestamp);
+    mapping(address => DepositInfo) public deposits; // Store deposits per user
 
-        require(block.timestamp >= unlockTime, "You can't withdraw yet");
-        require(msg.sender == owner, "You aren't the owner");
-
-        emit Withdrawal(address(this).balance, block.timestamp);
-
-        owner.transfer(address(this).balance);
-    }
+    event Withdrawal(address indexed user, uint amount, uint when);
+    event Deposit(address indexed user, uint amount, uint when);
 
     function deposit() public payable {
         require(msg.value > 0, "Deposit amount must be greater than zero");
 
-        unlockTime = block.timestamp + 10 minutes;
+        deposits[msg.sender].amount += msg.value;
+        deposits[msg.sender].unlockTime = block.timestamp + 10 minutes; // ⏳ Reset unlock time per user
 
         emit Deposit(msg.sender, msg.value, block.timestamp);
+    }
+
+    function withdraw() public {
+        DepositInfo storage userDeposit = deposits[msg.sender];
+
+        require(userDeposit.amount > 0, "No funds to withdraw");
+        require(
+            block.timestamp >= userDeposit.unlockTime,
+            "You can't withdraw yet"
+        );
+
+        uint amount = userDeposit.amount;
+        userDeposit.amount = 0; // Prevent reentrancy
+        payable(msg.sender).transfer(amount);
+
+        emit Withdrawal(msg.sender, amount, block.timestamp);
     }
 }
